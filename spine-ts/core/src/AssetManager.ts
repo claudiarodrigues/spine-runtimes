@@ -139,9 +139,13 @@ module spine {
 		}
 
 		loadTextureAtlas (path: string,
+				   pageBaseUrl: string,
 				   success: (path: string, atlas: TextureAtlas) => void = null,
 				   error: (path: string, error: string) => void = null) {
+
 			let parent = path.lastIndexOf("/") >= 0 ? path.substring(0, path.lastIndexOf("/")) : "";
+
+			pageBaseUrl = pageBaseUrl || parent
 			path = this.pathPrefix + path;
 			this.toLoad++;
 
@@ -150,7 +154,7 @@ module spine {
 				let atlasPages = new Array<string>();
 				try {
 					let atlas = new TextureAtlas(atlasData, (path: string) => {
-						atlasPages.push(parent + "/" + path);
+						atlasPages.push(pageBaseUrl + "/" + path);
 						let image = document.createElement("img") as HTMLImageElement;
 						image.width = 16;
 						image.height = 16;
@@ -174,7 +178,7 @@ module spine {
 							if (!pageLoadError) {
 								try {
 									let atlas = new TextureAtlas(atlasData, (path: string) => {
-										return this.get(parent + "/" + path);
+										return this.get(pageBaseUrl + "/" + path);
 									});
 									this.assets[path] = atlas;
 									if (success) success(path, atlas);

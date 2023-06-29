@@ -43,8 +43,11 @@ module spine {
 		/* the URL of the skeleton .json file */
 		jsonUrl: string
 
-		/* the URL of the skeleton .atlas file. Atlas page images are automatically resolved. */
+		/* the URL of the skeleton .atlas file. */
 		atlasUrl: string
+
+		/* Optional: the URL of the Atlas page images. Default: automatically resolved. */
+		pageBaseUrl: string
 
 		/* Optional: the name of the animation to be played. Default: first animation in the skeleton. */
 		animation: string
@@ -419,7 +422,7 @@ module spine {
 			// Load the assets
 			this.assetManager = new spine.webgl.AssetManager(this.context);
 			this.assetManager.loadText(config.jsonUrl);
-			this.assetManager.loadTextureAtlas(config.atlasUrl);
+			this.assetManager.loadTextureAtlas(config.atlasUrl, config.pageBaseUrl);
 			if (config.backgroundImage && config.backgroundImage.url)
 				this.assetManager.loadTexture(config.backgroundImage.url);
 

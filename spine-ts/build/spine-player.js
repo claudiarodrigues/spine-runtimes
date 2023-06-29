@@ -2199,11 +2199,12 @@ var spine;
             };
             img.src = data;
         };
-        AssetManager.prototype.loadTextureAtlas = function (path, success, error) {
+        AssetManager.prototype.loadTextureAtlas = function (path, pageBaseUrl, success, error) {
             var _this = this;
             if (success === void 0) { success = null; }
             if (error === void 0) { error = null; }
             var parent = path.lastIndexOf("/") >= 0 ? path.substring(0, path.lastIndexOf("/")) : "";
+            pageBaseUrl = pageBaseUrl || parent;
             path = this.pathPrefix + path;
             this.toLoad++;
             AssetManager.downloadText(path, function (atlasData) {
@@ -2211,7 +2212,7 @@ var spine;
                 var atlasPages = new Array();
                 try {
                     var atlas = new spine.TextureAtlas(atlasData, function (path) {
-                        atlasPages.push(parent + "/" + path);
+                        atlasPages.push(pageBaseUrl + "/" + path);
                         var image = document.createElement("img");
                         image.width = 16;
                         image.height = 16;
@@ -2235,7 +2236,7 @@ var spine;
                             if (!pageLoadError) {
                                 try {
                                     var atlas = new spine.TextureAtlas(atlasData, function (path) {
-                                        return _this.get(parent + "/" + path);
+                                        return _this.get(pageBaseUrl + "/" + path);
                                     });
                                     _this.assets[path] = atlas;
                                     if (success)
@@ -9695,7 +9696,7 @@ var spine;
             }
             this.assetManager = new spine.webgl.AssetManager(this.context);
             this.assetManager.loadText(config.jsonUrl);
-            this.assetManager.loadTextureAtlas(config.atlasUrl);
+            this.assetManager.loadTextureAtlas(config.atlasUrl, config.pageBaseUrl);
             if (config.backgroundImage && config.backgroundImage.url)
                 this.assetManager.loadTexture(config.backgroundImage.url);
             requestAnimationFrame(function () { return _this.drawFrame(); });

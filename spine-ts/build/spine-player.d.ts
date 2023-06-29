@@ -385,7 +385,7 @@ declare module spine {
         loadText(path: string, success?: (path: string, text: string) => void, error?: (path: string, error: string) => void): void;
         loadTexture(path: string, success?: (path: string, image: HTMLImageElement) => void, error?: (path: string, error: string) => void): void;
         loadTextureData(path: string, data: string, success?: (path: string, image: HTMLImageElement) => void, error?: (path: string, error: string) => void): void;
-        loadTextureAtlas(path: string, success?: (path: string, atlas: TextureAtlas) => void, error?: (path: string, error: string) => void): void;
+        loadTextureAtlas(path: string, pageBaseUrl: string, success?: (path: string, atlas: TextureAtlas) => void, error?: (path: string, error: string) => void): void;
         get(path: string): any;
         remove(path: string): void;
         removeAll(): void;
@@ -1696,6 +1696,7 @@ declare module spine {
     interface SpinePlayerConfig {
         jsonUrl: string;
         atlasUrl: string;
+        pageBaseUrl: string;
         animation: string;
         animations: string[];
         defaultMix: number;
