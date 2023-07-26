@@ -74,6 +74,11 @@ module spine.webgl {
 			}
 		}
 
+		dispose (): void {
+			this.logo?.dispose();
+			this.spinner?.dispose();
+		}
+		
 		draw (complete = false) {
 			if (complete && this.fadeOut > LoadingScreen.FADE_SECONDS) return;
 

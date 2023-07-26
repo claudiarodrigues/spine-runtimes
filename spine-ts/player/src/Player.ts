@@ -131,7 +131,7 @@ module spine {
 	class Popup {
 		public dom: HTMLElement;
 
-		constructor(private player: HTMLElement, parent: HTMLElement, htmlContent: string) {
+		constructor(private player: SpinePlayer, parent: HTMLElement, htmlContent: string) {
 			this.dom = createElement(/*html*/`
 				<div class="spine-player-popup spine-player-hidden">
 				</div>
@@ -147,9 +147,10 @@ module spine {
 			var dismissed = false;
 			let resize = () => {
 				if (!dismissed) requestAnimationFrame(resize);
-				let bottomOffset = Math.abs(this.dom.getBoundingClientRect().bottom - this.player.getBoundingClientRect().bottom);
-				let rightOffset = Math.abs(this.dom.getBoundingClientRect().right - this.player.getBoundingClientRect().right);
-				let maxHeight = this.player.clientHeight - bottomOffset - rightOffset;
+				let playerDom = this.player.dom;
+				let bottomOffset = Math.abs(this.dom.getBoundingClientRect().bottom - playerDom.getBoundingClientRect().bottom);
+				let rightOffset = Math.abs(this.dom.getBoundingClientRect().right - playerDom.getBoundingClientRect().right);
+				let maxHeight = playerDom.clientHeight - bottomOffset - rightOffset;
 				this.dom.style.maxHeight = maxHeight + "px";
 			}
 			requestAnimationFrame(resize);
@@ -169,7 +170,7 @@ module spine {
 					dismissed = true;
 				}
 			}
-			window.addEventListener("click", windowClickListener);
+			this.player.addEventListener(window, "click", windowClickListener);
 		}
 	}
 
@@ -285,8 +286,9 @@ module spine {
 		static NON_HOVER_COLOR_INNER = new spine.Color(0.478, 0, 0, 0.5);
 		static NON_HOVER_COLOR_OUTER = new spine.Color(1, 0, 0, 0.8);
 
+		public dom: HTMLElement;
+
 		private sceneRenderer: spine.webgl.SceneRenderer;
-		private dom: HTMLElement;
 		private playerControls: HTMLElement;
 		private canvas: HTMLCanvasElement;
 		private timelineSlider: Slider;
@@ -305,6 +307,7 @@ module spine {
 		private paused = true;
 		private playTime = 0;
 		private speed = 1;
+		private disposed = false;
 
 		private animationViewports: Map<Viewport> = {}
 		private currentViewport: Viewport = null;
@@ -313,6 +316,8 @@ module spine {
 
 		private selectedBones: Bone[];
 		private parent: HTMLElement;
+
+		private eventListeners: Array<{ target: any, event: any, func: any }> = [];
 
 		constructor(parent: HTMLElement | string, private config: SpinePlayerConfig) {
 			if (typeof parent === "string") this.parent = document.getElementById(parent);
@@ -373,6 +378,23 @@ module spine {
 			errorDom.classList.remove("spine-player-hidden");
 			errorDom.innerHTML = `<p style="text-align: center; align-self: center;">${error}</p>`;
 			this.config.error(this, error);
+		}
+
+		dispose(): void {
+			this.sceneRenderer?.dispose();
+			this.loadingScreen?.dispose();
+			this.assetManager?.dispose();
+			for (var i = 0; i < this.eventListeners.length; i++) {
+				var eventListener = this.eventListeners[i];
+				eventListener.target.removeEventListener(eventListener.event, eventListener.func);
+			}
+			this.parent.removeChild(this.dom);
+			this.disposed = true;
+		}
+
+		addEventListener(target: any, event: any, func: any) {
+			this.eventListeners.push({ target: target, event: event, func: func });
+			target.addEventListener(event, func);
 		}
 
 		render(): HTMLElement {
@@ -526,7 +548,7 @@ module spine {
 				speedButton.classList.remove("spine-player-button-icon-speed-selected")
 				return;
 			}
-			let popup = new Popup(this.dom, this.playerControls, /*html*/`
+			let popup = new Popup(this, this.playerControls, /*html*/`
 				<div class="spine-player-popup-title">Speed</div>
 				<hr>
 				<div class="spine-player-row" style="user-select: none; align-items: center; padding: 8px;">
@@ -565,7 +587,7 @@ module spine {
 			}
 			if (!this.skeleton || this.skeleton.data.animations.length == 0) return;
 
-			let popup = new Popup(this.dom, this.playerControls, /*html*/`
+			let popup = new Popup(this, this.playerControls, /*html*/`
 				<div class="spine-player-popup-title">Animations</div>
 				<hr>
 				<ul class="spine-player-list"></ul>
@@ -615,7 +637,7 @@ module spine {
 			}
 			if (!this.skeleton || this.skeleton.data.animations.length == 0) return;
 
-			let popup = new Popup(this.dom, this.playerControls, /*html*/`
+			let popup = new Popup(this, this.playerControls, /*html*/`
 				<div class="spine-player-popup-title">Skins</div>
 				<hr>
 				<ul class="spine-player-list"></ul>
@@ -666,7 +688,7 @@ module spine {
 			}
 			if (!this.skeleton || this.skeleton.data.animations.length == 0) return;
 
-			let popup = new Popup(this.dom, this.playerControls, /*html*/`
+			let popup = new Popup(this, this.playerControls, /*html*/`
 				<div class="spine-player-popup-title">Debug</div>
 				<hr>
 				<ul class="spine-player-list">
@@ -704,6 +726,7 @@ module spine {
 		}
 
 		drawFrame (requestNextFrame = true) {
+			if (this.disposed) return;
 			if (requestNextFrame) requestAnimationFrame(() => this.drawFrame());
 			let ctx = this.context;
 			let gl = ctx.gl;
@@ -1033,12 +1056,12 @@ module spine {
 			// area :/
 			var mouseOverControls = true;
 			var mouseOverCanvas = false;
-			document.addEventListener("mousemove", (ev: UIEvent) => {
+			this.addEventListener(document, "mousemove", (ev: UIEvent) => {
 				if (ev instanceof MouseEvent) {
 					handleHover(ev.clientX, ev.clientY);
 				}
 			});
-			document.addEventListener("touchmove", (ev: UIEvent) => {
+			this.addEventListener(document, "touchmove", (ev: UIEvent) => {
 				if (ev instanceof TouchEvent) {
 					var touches = ev.changedTouches;
 					if (touches.length > 0) {
